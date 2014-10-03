@@ -1,4 +1,5 @@
 import Data.Comand;
+import Data.Facultet;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -9,8 +10,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,61 +20,70 @@ import java.util.Set;
 
 public class TvorcestGUI extends JDialog{
 	private JPanel panel1;
-	JTable jtabOrders;
-
-	TableModel tm;
-
+	private JPanel comPanel;
+	private JPanel facPanel;
 
 
-	public TvorcestGUI(final List<Comand> comands) {
+	public TvorcestGUI() {
+		setTitle(MpguMetaInfo.tvorTitle);
 		setContentPane(panel1);
 		setModal(true);
-		String[] headings = { "Команда",
-				"Конкурс 1",
-				"Конкурс 2",
-				"Конкурс 3",
-				"Сумма",
-				"Место"
-		};
+		redrawCommand();
+		redrawFacultet();
+		panel1.setVisible(true);
 
-		Object[][] data = new Object[comands.size()][6];
+
+		panel1.setVisible(true);
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent we) {
+				DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
+			}
+		});
+	}
+
+
+
+	private void redrawCommand(){
+		comPanel.removeAll();
+		comPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.comanda.size()][6];
 		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-		for (int i=0;i<comands.size();i++){
+		for (int i=0;i<Mpgu_slet.comanda.size();i++){
 			int summ = 0;
-			for(int ball:comands.get(i).getTvorcestvo()){summ+=ball;}
-			data[i][0] = comands.get(i).getName();
-			data[i][1] = comands.get(i).getTvorcestvo()[0];
-			data[i][2] = comands.get(i).getTvorcestvo()[1];
-			data[i][3] = comands.get(i).getTvorcestvo()[2];
+			for(int ball:Mpgu_slet.comanda.get(i).getTvorcestvo()){summ+=ball;}
+			data[i][0] = Mpgu_slet.comanda.get(i).getName();
+			data[i][1] = Mpgu_slet.comanda.get(i).getTvorcestvo()[0];
+			data[i][2] = Mpgu_slet.comanda.get(i).getTvorcestvo()[1];
+			data[i][3] = Mpgu_slet.comanda.get(i).getTvorcestvo()[2];
 			data[i][4] = summ;
 			forSort.put(i,summ);
 		}
 
 		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
 		Integer ball =-1;
-		HashSet hs = new HashSet();
-		hs.addAll(forSort.values());
+		HashSet hs = new HashSet(forSort.values());
 		int place=hs.size()+1;
 		for (Sort.SortHM cin:sortHM){
 			if(cin.ball>ball) {ball=cin.ball; place--;}
-			data[cin.comand][5] = place;
-			comands.get(cin.comand).setTvorcestvoPlace(place);
+			data[cin.key][5] = place;
+			Mpgu_slet.comanda.get(cin.key).setTvorcestvoPlace(place);
 		}
 
 
-		panel1.setLayout(new FlowLayout());
-		jtabOrders = new JTable(data, headings);
-		JScrollPane jscrlp = new JScrollPane(jtabOrders);
-		jtabOrders.setPreferredScrollableViewportSize(new Dimension(1000, 200));
-		tm = jtabOrders.getModel();
+		comPanel.setLayout(new FlowLayout());
+		JTable tvorComandTable = new JTable(data, MpguMetaInfo.headingsTvorCommand);
+		JScrollPane jscrlp = new JScrollPane(tvorComandTable);
+		tvorComandTable.setPreferredScrollableViewportSize(new Dimension(1000, 200));
+		final TableModel tm = tvorComandTable.getModel();
 		tm.addTableModelListener(new TableModelListener()
 		{
 			public void tableChanged(TableModelEvent tme)
 			{
 				if(tme.getType() == TableModelEvent.UPDATE)
 				{
-					Comand comand = comands.get(tme.getFirstRow());
-					if(tme.getColumn() == 0) return;
+					Comand comand = Mpgu_slet.comanda.get(tme.getFirstRow());
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
 					if(tme.getColumn() == 5) {
 						comand.setTvorcestvoPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 								tme.getColumn()).toString()));
@@ -83,35 +91,68 @@ public class TvorcestGUI extends JDialog{
 					}
 					comand.getTvorcestvo()[tme.getColumn() - 1] = Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 							tme.getColumn()).toString());
+					redrawCommand();
 				}
 			}
 		});
-		panel1.add(jscrlp);
-		panel1.setVisible(true);
-		this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent we) {
-				HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-				for (int i=0;i<comands.size();i++){
-					int summ = 0;
-					for(int ball:comands.get(i).getTvorcestvo()){summ+=ball;}
-					forSort.put(i,summ);
-				}
-
-				Sort.SortHM[] sortHM= Sort.sortHM(forSort);
-				Integer ball =-1;
-				HashSet hs = new HashSet();
-				hs.addAll(forSort.values());
-				int place=hs.size()+1;
-				for (Sort.SortHM cin:sortHM){
-					if(cin.ball>ball) {ball=cin.ball; place--;}
-					comands.get(cin.comand).setTvorcestvoPlace(place);
-				}
-
-				DataWorker.saveData(comands, Comand.class.getName());
-				System.out.println("save");
-			}
-		});
+		comPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
 	}
 
+	private void redrawFacultet() {
+		facPanel.removeAll();
+		facPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.facultet.size()][6];
+		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
+		for (int i=0;i<Mpgu_slet.facultet.size();i++){
+			int summ = 0;
+			for(int ball:Mpgu_slet.facultet.get(i).getTvorcestvo()){summ+=ball;}
+			data[i][0] = Mpgu_slet.facultet.get(i).getName();
+			data[i][1] = Mpgu_slet.facultet.get(i).getTvorcestvo()[0];
+			data[i][2] = Mpgu_slet.facultet.get(i).getTvorcestvo()[1];
+			data[i][3] = Mpgu_slet.facultet.get(i).getTvorcestvo()[2];
+			data[i][4] = summ;
+			forSort.put(i,summ);
+		}
+
+		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
+		Integer ball =-1;
+		HashSet hs = new HashSet(forSort.values());
+		int place=hs.size()+1;
+		for (Sort.SortHM cin:sortHM){
+			if(cin.ball>ball) {ball=cin.ball; place--;}
+			data[cin.key][5] = place;
+			Mpgu_slet.facultet.get(cin.key).setTvorcestvoPlace(place);
+		}
+
+
+		facPanel.setLayout(new FlowLayout());
+		JTable tvorFacultetTable = new JTable(data, MpguMetaInfo.headingsTvorFacultet);
+		JScrollPane jscrlp = new JScrollPane(tvorFacultetTable);
+		tvorFacultetTable.setPreferredScrollableViewportSize(new Dimension(1000, 200));
+		final TableModel tm = tvorFacultetTable.getModel();
+		tm.addTableModelListener(new TableModelListener()
+		{
+			public void tableChanged(TableModelEvent tme)
+			{
+				if(tme.getType() == TableModelEvent.UPDATE)
+				{
+					Facultet facultet = Mpgu_slet.facultet.get(tme.getFirstRow());
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
+					if(tme.getColumn() == 5) {
+						facultet.setTvorcestvoPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+								tme.getColumn()).toString()));
+						return;
+					}
+					facultet.getTvorcestvo()[tme.getColumn() - 1] = Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+							tme.getColumn()).toString());
+					redrawFacultet();
+				}
+			}
+		});
+		facPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
+
+	}
 
 }

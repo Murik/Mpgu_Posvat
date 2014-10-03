@@ -50,6 +50,8 @@ public class PaarPeople {
 				+ " / " + people1.getComandName() + " / " + people1.getFacultetName();
 	}
 
+
+
 	public People getPeople1() {
 		return people1;
 	}

@@ -14,34 +14,44 @@ import java.util.List;
  */
 
 public class Comand {
-	Facultet facultet;
+	String facultetName;
 	String Name;
 	int[] bivak = new int[]{0,0,0,0,0};
-	int prometei = 0;
-	int[] tvorcestvo = new int[] {0,0,0};
+	int bivakSummBalls =0; //чем меньше балов тем лучше
+	int bivakPlace = 0;
 
-//	List<PaarPeople> paarPeoples = new ArrayList<PaarPeople>() {};
+
+	int prometei = 0;
+	int prometeiPlace = 0;
+
+
+	int[] tvorcestvo = new int[] {0,0,0};
+	int tvorcestvoPlace =0;
 
 
 	Timestamp startPolosa = new Timestamp(0);
 	Timestamp finishPolosa = new Timestamp(0);
 	int ballsPolosa = 0;
-
-	int bivakPlace = 0;
-	int prometeiPlace = 0;
-	int tvorcestvoPlace =0;
-
 	int polosaPlace = 0;
-	int konkursnajaProg = 0;
-	int orientirovanie = 0;
 
-	public Comand(Facultet facultet, String name) {
-		this.facultet = facultet;
+
+	int konkursnajaProg = 0;
+
+	int orientirovaniePlace = 0;
+
+	int finalPlace = 0;
+
+	public Comand(String facultetName, String name) {
+		this.facultetName = facultetName;
 		Name = name;
 	}
 
-	public Facultet getFacultet() {
-		return facultet;
+	public String getFacultetName() {
+		return facultetName;
+	}
+
+	public void setFacultetName(String facultetName) {
+		this.facultetName = facultetName;
 	}
 
 	public String getName() {
@@ -50,6 +60,18 @@ public class Comand {
 
 	public int[] getBivak() {
 		return bivak;
+	}
+
+	public void setBivak(int bivakProxod,int ball) {
+		this.bivak[bivakProxod] = ball;
+		this.bivakSummBalls =0;
+		for (int i : this.bivak) {
+			this.bivakSummBalls += i;
+		}
+	}
+
+	public int getBivakSummBalls() {
+		return bivakSummBalls;
 	}
 
 	public int getBivakPlace() {
@@ -128,12 +150,20 @@ public class Comand {
 		this.polosaPlace = polosaPlace;
 	}
 
-	public int getOrientirovanie() {
-		return orientirovanie;
+	public int getOrientirovaniePlace() {
+		return orientirovaniePlace;
 	}
 
-	public void setOrientirovanie(int orientirovanie) {
-		this.orientirovanie = orientirovanie;
+	public void setOrientirovaniePlace(int orientirovaniePlace) {
+		this.orientirovaniePlace = orientirovaniePlace;
+	}
+
+	public int getFinalPlace() {
+		return finalPlace;
+	}
+
+	public void setFinalPlace(int finalPlace) {
+		this.finalPlace = finalPlace;
 	}
 
 	@Override

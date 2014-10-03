@@ -1,5 +1,3 @@
-import Data.PaarPeople;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,7 +39,7 @@ public class Sort {
 		}
 		Sort.SortHM[] sortHMBall = Sort.sortHM(hm, "asc");
 		for (Sort.SortHM cin : sortHMBall) {
-			System.out.println(cin.comand + " | " + cin.ball);
+			System.out.println(cin.key + " | " + cin.ball);
 		}
 		System.out.println("!_-------------------------_!");
 		Integer ball = -1000;
@@ -52,19 +50,19 @@ public class Sort {
 				ball = cin.ball;
 				placeBall = placeBall - 1000;
 			}
-//			forSortPlace.put(cin.comand, placeBall);
-			System.out.println(cin.comand + " | " + placeBall);
+//			forSortPlace.put(cin.key, placeBall);
+			System.out.println(cin.key + " | " + placeBall);
 		}
 
 		System.out.println("!_-------------------------_!");
 
 		sortHMBall = Sort.sortHM(hm, "desc");
 		for (Sort.SortHM cin : sortHMBall) {
-			System.out.println(cin.comand + " | " + cin.ball);
+			System.out.println(cin.key + " | " + cin.ball);
 		}
 		System.out.println("!_-------------------------_!");
 		for (Sort.SortHM cin : sortHMBall) {
-			System.out.println(cin.comand + " | " + cin.ball);
+			System.out.println(cin.key + " | " + cin.ball);
 		}
 }
 
@@ -109,11 +107,11 @@ public class Sort {
 
 
 	public static class SortHM {
-		public Integer comand;
+		public Integer key;
 		public Integer ball;
 
-		private SortHM(Integer comand, Integer ball) {
-			this.comand = comand;
+		private SortHM(Integer key, Integer ball) {
+			this.key = key;
 			this.ball = ball;
 		}
 	}

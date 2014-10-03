@@ -25,7 +25,7 @@ public class PeopleGUI extends JDialog {
 	private JButton deletePeopleButton;
 	private JPanel contentPane;
 
-	public PeopleGUI(final List<Facultet> facultet, final List<Comand> comanda, final List<People> peoples) {
+	public PeopleGUI() {
 		setTitle(MpguMetaInfo.peopleTitle);
 		setContentPane(contentPane);
 		setModal(true);
@@ -40,11 +40,11 @@ public class PeopleGUI extends JDialog {
 //		for(Facultet fac : facultet) {
 //			facBox.addItem(fac.getName());
 //		}
-		for(Comand com : comanda) {
+		for(Comand com : Mpgu_slet.comanda) {
 			ComanBox.addItem(com);
 		}
 
-		for(People people : peoples) {
+		for(People people : Mpgu_slet.peoples) {
 			info.addElement(people);
 		}
 
@@ -55,11 +55,11 @@ public class PeopleGUI extends JDialog {
 					String name = nameField.getText();
 					String surname = surnameField.getText();
 					if (name.length()==0 || surname.length()==0) return;
-				   	Comand com = comanda.get(ComanBox.getSelectedIndex());
+				   	Comand com = Mpgu_slet.comanda.get(ComanBox.getSelectedIndex());
 					if(!info.contains(format(name,surname,com)))  {
 						info.addElement(format(name,surname,com));
-						Comand comand = comanda.get(ComanBox.getSelectedIndex());
-						peoples.add(new People(info.size()+1,name,surname,comand.getName(), comand.getFacultet().getName()));
+						Comand comand = Mpgu_slet.comanda.get(ComanBox.getSelectedIndex());
+						Mpgu_slet.peoples.add(new People(info.size()+1,name,surname,comand.getName(), comand.getFacultetName()));
 						nameField.setText("");
 						surnameField.setText("");
 					}
@@ -70,14 +70,14 @@ public class PeopleGUI extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
 				if(listPeople.getSelectedIndex()==-1) return;
-				peoples.remove(listPeople.getSelectedIndex());
+				Mpgu_slet.peoples.remove(listPeople.getSelectedIndex());
 				info.remove(listPeople.getSelectedIndex());
 			}
 		});
 
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent we) {
-				DataWorker.saveData(peoples, People.class.getName());
+				DataWorker.saveData(Mpgu_slet.peoples, People.class.getName());
 				System.out.println("save");
 			}
 		});
@@ -85,6 +85,6 @@ public class PeopleGUI extends JDialog {
 	}
 
 	private String format(String name, String surname, Comand comand){
-		return name + " "+surname + " / " + comand.getName() + " / " + comand.getFacultet().getName();
+		return name + " "+surname + " / " + comand.getName() + " / " + comand.getFacultetName();
 	}
 }

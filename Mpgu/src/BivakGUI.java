@@ -1,4 +1,5 @@
 import Data.Comand;
+import Data.Facultet;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -7,11 +8,7 @@ import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,104 +18,131 @@ import java.util.Map;
  */
 public class BivakGUI extends JDialog {
 	private JPanel panel1;
-	JTable jtabOrders;
+	private JPanel comPanel;
+	private JPanel facPanel;
 
-	TableModel tm;
 
-	public BivakGUI(final List<Comand> comands) {
+	public BivakGUI() {
 		setTitle(MpguMetaInfo.bivakTitle);
 		setContentPane(panel1);
 		setModal(true);
+		redrawCommand();
+		redrawFacultet();
+		panel1.setVisible(true);
 
-//		String[] columnNames = {
-
-//		};
-//
-//		TableColumnModel info = new DefaultTableColumnModel();
-//		TableColumn column1 = new TableColumn();
-//		column1.setHeaderValue("Проход 1");
-//		info.addColumn(column1);
-//		jTable1.setColumnModel(info);
-
-//	}
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent we) {
+				DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
+			}
+		});
+	}
 
 
-		Object[][] data = new Object[comands.size()][8];
+	private void redrawCommand(){
+		comPanel.removeAll();
+		comPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.comanda.size()][8];
 		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-		for (int i=0;i<comands.size();i++){
-			int summ = 0;
-			for(int ball:comands.get(i).getBivak()){summ+=ball;}
-			data[i][0] = comands.get(i);
-			data[i][1] = comands.get(i).getBivak()[0];
-			data[i][2] = comands.get(i).getBivak()[1];
-			data[i][3] = comands.get(i).getBivak()[2];
-			data[i][4] = comands.get(i).getBivak()[3];
-			data[i][5] = comands.get(i).getBivak()[4];
-			data[i][6] = summ;
-			forSort.put(i,summ);
+		for (int i=0;i<Mpgu_slet.comanda.size();i++){
+			data[i][0] = Mpgu_slet.comanda.get(i);
+			data[i][1] = Mpgu_slet.comanda.get(i).getBivak()[0];
+			data[i][2] = Mpgu_slet.comanda.get(i).getBivak()[1];
+			data[i][3] = Mpgu_slet.comanda.get(i).getBivak()[2];
+			data[i][4] = Mpgu_slet.comanda.get(i).getBivak()[3];
+			data[i][5] = Mpgu_slet.comanda.get(i).getBivak()[4];
+			data[i][6] = Mpgu_slet.comanda.get(i).getBivakSummBalls();
+			forSort.put(i,Mpgu_slet.comanda.get(i).getBivakSummBalls());
 		}
 
 		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
 		Integer ball =-1;
 		int place =0;
 		for (Sort.SortHM cin:sortHM){
-			if(cin.ball>ball) {ball=cin.ball; place++;}
-			data[cin.comand][7] = place;
-			comands.get(cin.comand).setBivakPlace(place);
+			if(cin.ball>ball) {ball=cin.ball; place++;}  //если баллы одинаковые
+			data[cin.key][7] = place;
+			Mpgu_slet.comanda.get(cin.key).setBivakPlace(place);
 		}
 
-
-		panel1.setLayout(new FlowLayout());
-		jtabOrders = new JTable(data, MpguMetaInfo.headingsBivak);
-		JScrollPane jscrlp = new JScrollPane(jtabOrders);
-		jtabOrders.setPreferredScrollableViewportSize(
+		comPanel.setLayout(new FlowLayout());
+		JTable bivakComandTable = new JTable(data, MpguMetaInfo.headingsBivakCommand);
+		JScrollPane jscrlp = new JScrollPane(bivakComandTable);
+		bivakComandTable.setPreferredScrollableViewportSize(
 				new Dimension(1000, 200));
 
-		tm = jtabOrders.getModel();
+		final TableModel tm = bivakComandTable.getModel();
 		tm.addTableModelListener(new TableModelListener() {
 			public void tableChanged(TableModelEvent tme) {
 				if(tme.getType() == TableModelEvent.UPDATE) {
-					Comand comand = comands.get(tme.getFirstRow());
-					if(tme.getColumn() == 0) return;
+
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
+					Comand comand = Mpgu_slet.comanda.get(tme.getFirstRow());
 					if(tme.getColumn() == 7) {
 						comand.setBivakPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 								tme.getColumn()).toString()));
 						return;
 					}
-					comand.getBivak()[tme.getColumn() - 1] = Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
-							tme.getColumn()).toString());
+					comand.setBivak(tme.getColumn() - 1,Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+							tme.getColumn()).toString()));
+					redrawCommand();
 				}
 			}
 		});
-
-
-		panel1.add(jscrlp);
-
-		panel1.setVisible(true);
-
-		this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent we) {
-				HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-				for (int i=0;i<comands.size();i++){
-					int summ = 0;
-					for(int ball:comands.get(i).getBivak()){summ+=ball;}
-					forSort.put(i,summ);
-				}
-				Sort.SortHM[] sortHM= Sort.sortHM(forSort);
-				Integer ball =-1;
-				int place =0;
-				for (Sort.SortHM cin:sortHM){
-					if(cin.ball>ball) {ball=cin.ball; place++;}
-					comands.get(cin.comand).setBivakPlace(place);
-				}
-
-				DataWorker.saveData(comands, Comand.class.getName());
-				System.out.println("save");
-			}
-		});
+		comPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
 	}
 
+	private void redrawFacultet(){
+		facPanel.removeAll();
+		facPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.facultet.size()][8];
+		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
+		for (int i=0;i<Mpgu_slet.facultet.size();i++){
+			data[i][0] = Mpgu_slet.facultet.get(i);
+			data[i][1] = Mpgu_slet.facultet.get(i).getBivak()[0];
+			data[i][2] = Mpgu_slet.facultet.get(i).getBivak()[1];
+			data[i][3] = Mpgu_slet.facultet.get(i).getBivak()[2];
+			data[i][4] = Mpgu_slet.facultet.get(i).getBivak()[3];
+			data[i][5] = Mpgu_slet.facultet.get(i).getBivak()[4];
+			data[i][6] = Mpgu_slet.facultet.get(i).getBivakSummBalls();
+			forSort.put(i,Mpgu_slet.comanda.get(i).getBivakSummBalls());
+		}
 
+		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
+		Integer ball =-1;
+		int place =0;
+		for (Sort.SortHM cin:sortHM){
+			if(cin.ball>ball) {ball=cin.ball; place++;}  //если баллы одинаковые
+			data[cin.key][7] = place;
+			Mpgu_slet.facultet.get(cin.key).setBivakPlace(place);
+		}
 
+		facPanel.setLayout(new FlowLayout());
+		JTable bivakFacultetTable = new JTable(data, MpguMetaInfo.headingsBivakFacultet);
+		JScrollPane jscrlp = new JScrollPane(bivakFacultetTable);
+		bivakFacultetTable.setPreferredScrollableViewportSize(
+				new Dimension(1000, 200));
+
+		final TableModel tm = bivakFacultetTable.getModel();
+		tm.addTableModelListener(new TableModelListener() {
+			public void tableChanged(TableModelEvent tme) {
+				if(tme.getType() == TableModelEvent.UPDATE) {
+
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
+					Facultet facultet = Mpgu_slet.facultet.get(tme.getFirstRow());
+					if(tme.getColumn() == 7) {
+						facultet.setBivakPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+								tme.getColumn()).toString()));
+						return;
+					}
+					facultet.setBivak(tme.getColumn() - 1,Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+							tme.getColumn()).toString()));
+					redrawFacultet();
+				}
+			}
+		});
+		facPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
+	}
 
 }

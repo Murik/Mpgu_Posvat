@@ -19,7 +19,7 @@ public class Mpgu_start {
 
 	public static void main(String[] args) {
 		Facultet fac = new Facultet("qq");
-		Comand com = new Comand(fac,"comab");
+		Comand com = new Comand(fac.getName(),"comab");
 		People pp1 = new People(1,"Ivan","fuck",com.getName(),fac.getName());
 		People pp2 = new People(2,"Ivan1","fuck1",com.getName(),fac.getName());
 		People pp3 = new People(3,"Ivan2","fuck2",com.getName(),fac.getName());

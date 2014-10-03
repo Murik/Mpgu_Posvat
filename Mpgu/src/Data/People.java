@@ -12,7 +12,7 @@ public class People {
 	private String Name;
 	private String Surname;
 //	Facultet facultet;
-//	Comand comand;
+//	Comand key;
 	String comandName;
 	String facultetName;
 
@@ -55,5 +55,29 @@ public class People {
 	@Override
 	public String toString() {
 		return this.getName() + " "+this.getSurname() + " / " + this.getComandName() + " / " + this.getFacultetName();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		People people = (People) o;
+
+		if (!Name.equals(people.Name)) return false;
+		if (!Surname.equals(people.Surname)) return false;
+		if (!comandName.equals(people.comandName)) return false;
+		if (!facultetName.equals(people.facultetName)) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Name.hashCode();
+		result = 31 * result + Surname.hashCode();
+		result = 31 * result + comandName.hashCode();
+		result = 31 * result + facultetName.hashCode();
+		return result;
 	}
 }

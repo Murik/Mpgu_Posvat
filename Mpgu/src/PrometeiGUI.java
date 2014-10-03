@@ -1,4 +1,5 @@
 import Data.Comand;
+import Data.Facultet;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -9,7 +10,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,53 +20,65 @@ import java.util.List;
 
 public class PrometeiGUI extends JDialog{
 	private JPanel panel1;
-	JTable jtabOrders;
+	private JPanel facPanel;
+	private JPanel comPanel;
+	private JTable promComandTable;
+	private JTable promFacultetTable;
 
-	TableModel tm;
-
-	public PrometeiGUI(final List<Comand> comands) {
+	public PrometeiGUI() {
 		setContentPane(panel1);
 		setModal(true);
-		String[] headings = { "Команда",
-				"Прометей",
-				"Место"
-		};
+		redrawCommand();
+		redrawFacultet();
+		panel1.setVisible(true);
 
-		Object[][] data = new Object[comands.size()][3];
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent we) {
+
+				DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
+				System.out.println("save");
+			}
+		});
+	}
+
+
+	private void redrawCommand(){
+		comPanel.removeAll();
+		comPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.comanda.size()][3];
 		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-		for (int i=0;i<comands.size();i++){
-			data[i][0] = comands.get(i);
-			data[i][1] = comands.get(i).getPrometei();
-			data[i][2] = comands.get(i).getPrometeiPlace();
-			forSort.put(i,comands.get(i).getPrometei());
+		for (int i=0;i<Mpgu_slet.comanda.size();i++){
+			data[i][0] = Mpgu_slet.comanda.get(i);
+			data[i][1] = Mpgu_slet.comanda.get(i).getPrometei();
+			forSort.put(i,Mpgu_slet.comanda.get(i).getPrometei());
 		}
 
 		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
 		Integer ball =-1;
-		HashSet hs = new HashSet();
-		hs.addAll(forSort.values());
+		HashSet hs = new HashSet(forSort.values());
 		int place=hs.size()+1;
 		for (Sort.SortHM cin:sortHM){
 			if(cin.ball>ball) {ball=cin.ball; place--;}
-			data[cin.comand][2] = place;
-			comands.get(cin.comand).setPrometeiPlace(place);
+			data[cin.key][2] = place;
+			Mpgu_slet.comanda.get(cin.key).setPrometeiPlace(place);
 		}
 
-		panel1.setLayout(new FlowLayout());
-		jtabOrders = new JTable(data, headings);
-		JScrollPane jscrlp = new JScrollPane(jtabOrders);
-		jtabOrders.setPreferredScrollableViewportSize(
+		comPanel.setLayout(new FlowLayout());
+		promComandTable = new JTable(data, MpguMetaInfo.headingsPrometeiCommand);
+		JScrollPane jscrlp = new JScrollPane(promComandTable);
+		promComandTable.setPreferredScrollableViewportSize(
 				new Dimension(400, 150));
 
-		tm = jtabOrders.getModel();
+		final TableModel tm = promComandTable.getModel();
 		tm.addTableModelListener(new TableModelListener()
 		{
 			public void tableChanged(TableModelEvent tme)
 			{
 				if(tme.getType() == TableModelEvent.UPDATE)
 				{
-					Comand comand = comands.get(tme.getFirstRow());
-					if(tme.getColumn() == 0) return;
+					Comand comand = Mpgu_slet.comanda.get(tme.getFirstRow());
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
 					if(tme.getColumn() == 2) {
 						comand.setPrometeiPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 								tme.getColumn()).toString()));
@@ -74,33 +86,65 @@ public class PrometeiGUI extends JDialog{
 					}
 					comand.setPrometei(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 							tme.getColumn()).toString()));
+					redrawCommand();
 				}
 			}
 		});
 
-		panel1.add(jscrlp);
-		panel1.setVisible(true);
+		comPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
+	}
 
-		this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent we) {
+	private void redrawFacultet(){
+		facPanel.removeAll();
+		facPanel.revalidate();
+		Object[][] data = new Object[Mpgu_slet.facultet.size()][3];
+		HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
+		for (int i=0;i<Mpgu_slet.facultet.size();i++){
+			data[i][0] = Mpgu_slet.facultet.get(i);
+			data[i][1] = Mpgu_slet.facultet.get(i).getPrometei();
+			forSort.put(i,Mpgu_slet.facultet.get(i).getPrometei());
+		}
 
-				HashMap<Integer,Integer> forSort = new HashMap<Integer, Integer>();
-				for (int i=0;i<comands.size();i++){
-					forSort.put(i,comands.get(i).getPrometei());
+		Sort.SortHM[] sortHM= Sort.sortHM(forSort);
+		Integer ball =-1;
+		HashSet hs = new HashSet(forSort.values());
+		int place=hs.size()+1;
+		for (Sort.SortHM cin:sortHM){
+			if(cin.ball>ball) {ball=cin.ball; place--;}
+			data[cin.key][2] = place;
+			Mpgu_slet.facultet.get(cin.key).setPrometeiPlace(place);
+		}
+
+		facPanel.setLayout(new FlowLayout());
+		promFacultetTable = new JTable(data, MpguMetaInfo.headingsPrometeiFacultet);
+		JScrollPane jscrlp = new JScrollPane(promFacultetTable);
+		promFacultetTable.setPreferredScrollableViewportSize(
+				new Dimension(400, 150));
+
+		final TableModel tm = promFacultetTable.getModel();
+		tm.addTableModelListener(new TableModelListener()
+		{
+			public void tableChanged(TableModelEvent tme)
+			{
+				if(tme.getType() == TableModelEvent.UPDATE)
+				{
+					Facultet facultet = Mpgu_slet.facultet.get(tme.getFirstRow());
+					if(tme.getColumn() == 0) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
+					if(tme.getColumn() == 2) {
+						facultet.setPrometeiPlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+								tme.getColumn()).toString()));
+						return;
+					}
+					facultet.setPrometei(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+							tme.getColumn()).toString()));
+					redrawFacultet();
 				}
-				Sort.SortHM[] sortHM= Sort.sortHM(forSort);
-				Integer ball =-1;
-				HashSet hs = new HashSet();
-				hs.addAll(forSort.values());
-				int place=hs.size()+1;
-				for (Sort.SortHM cin:sortHM){
-					if(cin.ball>ball) {ball=cin.ball; place--;}
-					comands.get(cin.comand).setPrometeiPlace(place);
-				}
-				DataWorker.saveData(comands, Comand.class.getName());
-				System.out.println("save");
 			}
 		});
+
+		facPanel.add(jscrlp);
+		DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
 	}
 
 

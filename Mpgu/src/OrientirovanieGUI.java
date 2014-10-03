@@ -1,4 +1,5 @@
 import Data.Comand;
+import Data.Facultet;
 import Data.PaarPeople;
 
 import javax.swing.*;
@@ -10,8 +11,6 @@ import java.awt.event.*;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,59 +22,45 @@ import java.util.concurrent.TimeUnit;
 
 public class OrientirovanieGUI extends JDialog {
 	private JButton StartButton;
-	private JPanel panel1;
+	private JPanel paarPanel;
 	private JButton StopButton;
-	private JButton redrawButton;
 	private JPanel contentPanel;
-	private JButton redrawByPlacesButton;
 	private JPanel comandPlace;
 	private JCheckBox byPlacesCheckBox;
+	private JPanel facultetPlace;
 
 
-	JTable jtabOrders;
-	JTable jTable;
-
-	TableModel tm;
-	TableModel tm1;
+	JTable orientirPaarTable;
+	JTable comandRezultTable;
+	JTable facultetRezultTable;
 
 
-	String[] headingsCommandPlaces = { "Команда",
-			"Сумма",
-			"Место"
-	};
 
-	String[] headingsPaar = {"Номер",
-			"Пара",
-			"Время старта",
-			"Время финиша",
-			"Баллы",
-			"Зачетное время",
-			"Место"
-	};
 
-	public OrientirovanieGUI(final List<PaarPeople> paarPeoples, final List<Comand> comands) {
+	public OrientirovanieGUI() {
+		setTitle(MpguMetaInfo.polosaTitle);
 		setContentPane(contentPanel);
 		setModal(true);
-		redraw(paarPeoples);
-		redrawCommandPlaces(paarPeoples,comands);
+		redraw();
 		contentPanel.setVisible(true);
 
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent we) {
 
-				DataWorker.saveData(paarPeoples, PaarPeople.class.getName());
-				DataWorker.saveData(comands,Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.paarPeoples, PaarPeople.class.getName());
+				DataWorker.saveData(Mpgu_slet.comanda, Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.facultet, Facultet.class.getName());
 //				System.out.println("save");
 			}
 		});
+
 		StartButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				int[] rows = jtabOrders.getSelectedRows();
-				if (rows.length==0)return;
-				paarPeoples.get(rows[0]).setStartOrient(new Timestamp(System.currentTimeMillis()));
-				DataWorker.saveData(paarPeoples, PaarPeople.class.getName());
-				redrawAll(paarPeoples, comands);
+				int[] rows = orientirPaarTable.getSelectedRows();
+				if (rows.length==0){ JOptionPane.showMessageDialog(null, "Не выбрано"); return;}
+				Mpgu_slet.paarPeoples.get(rows[0]).setStartOrient(new Timestamp(System.currentTimeMillis()));
+				redraw();
 			}
 		});
 
@@ -83,11 +68,10 @@ public class OrientirovanieGUI extends JDialog {
 		StopButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				int[] rows = jtabOrders.getSelectedRows();
-				if (rows.length==0)return;
-				paarPeoples.get(rows[0]).setFinishOrient(new Timestamp(System.currentTimeMillis()));
-				DataWorker.saveData(paarPeoples, PaarPeople.class.getName());
-				redrawAll(paarPeoples, comands);
+				int[] rows = orientirPaarTable.getSelectedRows();
+				if (rows.length==0){ JOptionPane.showMessageDialog(null, "Не выбрано"); return;}
+				Mpgu_slet.paarPeoples.get(rows[0]).setFinishOrient(new Timestamp(System.currentTimeMillis()));
+				redraw();
 			}
 		});
 //		redrawButton.addActionListener(new ActionListener() {
@@ -109,61 +93,35 @@ public class OrientirovanieGUI extends JDialog {
 		byPlacesCheckBox.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				redrawAll(paarPeoples,comands);
+				redraw();
 			}
 		});
 	}
 
-	private void redrawAll(final List<PaarPeople> paarPeoples, final List<Comand> comands){
-		if (byPlacesCheckBox.isSelected()){
-			redrawByPlaces(paarPeoples);
-		}else {
-			redraw(paarPeoples);
-		}
-		redrawCommandPlaces(paarPeoples,comands);
-	}
 
-
-	private void redraw(final List<PaarPeople> paarPeoples){
-		panel1.removeAll();
-		panel1.revalidate();
-
-		Object[][] data = new Object[paarPeoples.size()][7];
-
+	private Sort.SortHM[] sortForBall(){
 		HashMap<Integer,Integer> forSortBall = new HashMap<Integer, Integer>();
 		HashMap<Integer,Integer> forSortTime = new HashMap<Integer, Integer>();
 		HashMap<Integer,Integer> forSortPlace = new HashMap<Integer, Integer>();
-
-		for (int i=0;i<paarPeoples.size();i++){
-//			int minutesToPolosaPlusBall =(int)(minutesToPolosa + (long)(paarPeoples.get(i).getBallsOrientir()*0.5));
-			data[i][0] = paarPeoples.get(i).getID();
-			data[i][1] = paarPeoples.get(i);
-			data[i][2] = paarPeoples.get(i).getStartOrient();
-			data[i][3] = paarPeoples.get(i).getFinishOrient();
-			data[i][4] = paarPeoples.get(i).getBallsOrientir();
-			data[i][5] = paarPeoples.get(i).getMinutesToPolosa();
-//			data[i][5] = minutesToPolosaPlusBall;
-
-			forSortBall.put(i,paarPeoples.get(i).getBallsOrientir());
-			forSortTime.put(i,paarPeoples.get(i).getMinutesToPolosa());
+		for (int i=0;i<Mpgu_slet.paarPeoples.size();i++){
+			forSortBall.put(i,Mpgu_slet.paarPeoples.get(i).getBallsOrientir());
+			forSortTime.put(i,Mpgu_slet.paarPeoples.get(i).getMinutesToPolosa());
 		}
-
-
 		Sort.SortHM[] sortHMBall= Sort.sortHM(forSortBall);
 		Integer ball =-1000;
-		HashSet<Integer> hs = new HashSet<Integer>(forSortBall.values()); //штрафные баллы (чем больше ПК тем меньше 1000)
+		HashSet<Integer> hs = new HashSet<Integer>(forSortBall.values()); //штрафные баллы (чем больше КП тем меньше 1000)
 		int placeBall=(hs.size()+1)*1000;
 		for (Sort.SortHM cin:sortHMBall){
 			if(cin.ball>ball) {ball=cin.ball; placeBall =placeBall-1000;}
-			forSortPlace.put(cin.comand, placeBall); // comand на самом деле id пар
+			forSortPlace.put(cin.key, placeBall); // key на самом деле id пар
 		}
 
 		Sort.SortHM[] sortHMTime= Sort.sortHM(forSortTime);
 		Integer ballForTime =-1;
 		int placeTime =0;
 		for (Sort.SortHM cin:sortHMTime){
-			if(cin.ball>ballForTime) {ballForTime=cin.ball; placeTime++;}  //штрафные баллы (чем больше ПК тем меньше 1000)
-			forSortPlace.put(cin.comand, forSortPlace.get(cin.comand) + placeTime); // comand на самом деле id пар
+			if(cin.ball>ballForTime) {ballForTime=cin.ball; placeTime++;} // по времени во возрастанию
+			forSortPlace.put(cin.key, forSortPlace.get(cin.key) + placeTime); // key на самом деле id пар
 		}
 
 		Sort.SortHM[] sortHMPlace= Sort.sortHM(forSortPlace);
@@ -171,128 +129,99 @@ public class OrientirovanieGUI extends JDialog {
 		int place =0;
 		for (Sort.SortHM cin:sortHMPlace){
 			if(cin.ball>ballForPlace) {ballForPlace=cin.ball; place++;}
-			data[cin.comand][6] = place;
-			paarPeoples.get(cin.comand).setOrientPlace(place);
+			Mpgu_slet.paarPeoples.get(cin.key).setOrientPlace(place);
+		}
+		return sortHMPlace;
+	}
+
+
+
+	private void redraw(){
+		paarPanel.removeAll();
+		paarPanel.revalidate();
+
+		Object[][] data = new Object[Mpgu_slet.paarPeoples.size()][7];
+		Sort.SortHM[] sortHM= sortForBall();
+		if (!byPlacesCheckBox.isSelected()) {
+			for (int i = 0; i < Mpgu_slet.paarPeoples.size(); i++) {
+				data[i][0] = Mpgu_slet.paarPeoples.get(i).getID();
+				data[i][1] = Mpgu_slet.paarPeoples.get(i);
+				data[i][2] = Mpgu_slet.paarPeoples.get(i).getStartOrient();
+				data[i][3] = Mpgu_slet.paarPeoples.get(i).getFinishOrient();
+				data[i][4] = Mpgu_slet.paarPeoples.get(i).getBallsOrientir();
+				data[i][5] = Mpgu_slet.paarPeoples.get(i).getMinutesToPolosa();
+				data[i][6] = Mpgu_slet.paarPeoples.get(i).getOrientPlace();
+			}
+		}else {
+			int pos=0;
+			for (Sort.SortHM cin:sortHM){
+				int i = cin.key;
+				data[pos][0] = Mpgu_slet.paarPeoples.get(i).getID();
+				data[pos][1] = Mpgu_slet.paarPeoples.get(i);
+				data[pos][2] = Mpgu_slet.paarPeoples.get(i).getStartOrient();
+				data[pos][3] = Mpgu_slet.paarPeoples.get(i).getFinishOrient();
+				data[pos][4] = Mpgu_slet.paarPeoples.get(i).getBallsOrientir();
+				data[pos][5] = Mpgu_slet.paarPeoples.get(i).getMinutesToPolosa();
+				data[pos][6] = Mpgu_slet.paarPeoples.get(i).getOrientPlace();
+				pos++;
+			}
+
 		}
 
+		paarPanel.setLayout(new FlowLayout());
+		orientirPaarTable = new JTable(data, MpguMetaInfo.headingsPaar);
+		orientirPaarTable.setColumnSelectionAllowed(false);
+		orientirPaarTable.setRowSelectionAllowed(true);
 
-		panel1.setLayout(new FlowLayout());
-		jtabOrders = new JTable(data, headingsPaar);
-		jtabOrders.setColumnSelectionAllowed(false);
-		jtabOrders.setRowSelectionAllowed(true);
 
-
-		JScrollPane jscrlp = new JScrollPane(jtabOrders);
-		jtabOrders.setPreferredScrollableViewportSize(
+		JScrollPane jscrlp = new JScrollPane(orientirPaarTable);
+		orientirPaarTable.setPreferredScrollableViewportSize(
 				new Dimension(1000, 300));
 
-		tm = jtabOrders.getModel();
+		final TableModel tm = orientirPaarTable.getModel();
 		tm.addTableModelListener(new TableModelListener()
 		{
 			public void tableChanged(TableModelEvent tme)
 			{
 				if(tme.getType() == TableModelEvent.UPDATE)
 				{
-					PaarPeople paarPeople = paarPeoples.get(tme.getFirstRow());
-					if(tme.getColumn() != 3) return;
+					PaarPeople paarPeople = Mpgu_slet.paarPeoples.get(tme.getFirstRow());
+					if(tme.getColumn() != 4) { JOptionPane.showMessageDialog(null, "Нельзя править"); return;}
 					paarPeople.setBallsOrientir(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 							tme.getColumn()).toString()));
+					redraw();
 				}
 			}
 		});
-		panel1.add(jscrlp);
-		panel1.setVisible(true);
+		paarPanel.add(jscrlp);
+		redrawCommandPlaces(sortHM);
+		redrawFacultetPlaces(sortHM);
 	}
 
-
-
-
-	private void redrawByPlaces(final List<PaarPeople> paarPeoples){
-		panel1.removeAll();
-		panel1.revalidate();
-
-		Object[][] data = new Object[paarPeoples.size()][7];
-
-		HashMap<Integer,Integer> forSortPlace = new HashMap<Integer, Integer>();
-		for (int i=0;i<paarPeoples.size();i++){
-			 forSortPlace.put(i, paarPeoples.get(i).getOrientPlace());
-		}
-
-		Sort.SortHM[] sortHM= Sort.sortHM(forSortPlace);
-		int pos=0;
-		for (Sort.SortHM cin:sortHM){
-			int i = cin.comand;
-			int minutesToPolosa =(int) TimeUnit.MILLISECONDS.toMinutes(paarPeoples.get(i).getFinishOrient().getTime()-paarPeoples.get(i).getStartOrient().getTime());
-			data[pos][0] = paarPeoples.get(i).getID();
-			data[pos][1] = paarPeoples.get(i);
-			data[pos][2] = paarPeoples.get(i).getStartOrient();
-			data[pos][3] = paarPeoples.get(i).getFinishOrient();
-			data[pos][4] = paarPeoples.get(i).getBallsOrientir();
-			data[pos][5] = minutesToPolosa;
-			data[pos][6] = paarPeoples.get(i).getOrientPlace();
-			pos++;
-		}
-
-		panel1.setLayout(new FlowLayout());
-		jtabOrders = new JTable(data, headingsPaar);
-		jtabOrders.setColumnSelectionAllowed(false);
-		jtabOrders.setRowSelectionAllowed(true);
-
-
-		JScrollPane jscrlp = new JScrollPane(jtabOrders);
-		jtabOrders.setPreferredScrollableViewportSize(
-				new Dimension(1000, 300));
-
-		tm = jtabOrders.getModel();
-		tm.addTableModelListener(new TableModelListener()
-		{
-			public void tableChanged(TableModelEvent tme)
-			{
-				if(tme.getType() == TableModelEvent.UPDATE)
-				{
-					PaarPeople paarPeople = paarPeoples.get(tme.getFirstRow());
-					if(tme.getColumn() != 3) return;
-					paarPeople.setBallsOrientir(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
-							tme.getColumn()).toString()));
-				}
-			}
-		});
-		panel1.add(jscrlp);
-		panel1.setVisible(true);
-	}
-
-
-
-
-	private void redrawCommandPlaces(final List<PaarPeople> paarPeoples, final List<Comand> comands){
+	private void redrawCommandPlaces(Sort.SortHM[] sortHM){
 		comandPlace.removeAll();
 		comandPlace.revalidate();
 
-		Object[][] data = new Object[comands.size()][3];
+		Object[][] data = new Object[Mpgu_slet.comanda.size()][3];
+
+
 		HashMap<Integer,Integer> forSortPlace = new HashMap<Integer, Integer>();
 
-		for(int i=0;i<comands.size();i++){
-			HashMap<Integer,Integer> forSortData = new HashMap<Integer, Integer>();
-			for (int j=0;j<paarPeoples.size();j++){
-				forSortData.put(j, paarPeoples.get(j).getOrientPlace());
-			}
-			Sort.SortHM[] sortHM= Sort.sortHM(forSortData);
-			Comand comand = comands.get(i);
-			int count=3;
+		for(int i=0;i<Mpgu_slet.comanda.size();i++){
+
+			Comand comand = Mpgu_slet.comanda.get(i);
+			int count=2;
 			int pos = 0;
 			forSortPlace.put(i,0);
-//			comand.setOrientirovanie(0);
 			for (Sort.SortHM cin:sortHM){
-				pos = cin.comand;
-				if (comand.getName().equals(paarPeoples.get(pos).getPeople1().getComandName()) && count!=0){
-//					comand.setOrientirovanie(comand.getOrientirovanie()+paarPeoples.get(pos).getOrientPlace());
-					forSortPlace.put(i,forSortPlace.get(i)+paarPeoples.get(pos).getOrientPlace());
+				pos = cin.key;
+				if (comand.getName().equals(Mpgu_slet.paarPeoples.get(pos).getPeople1().getComandName()) && count!=0){
+					forSortPlace.put(i,forSortPlace.get(i)+Mpgu_slet.paarPeoples.get(pos).getOrientPlace());
 					count--;
 				}
 			}
 			while (count!=0) {
-//				comand.setOrientirovanie(comand.getOrientirovanie()+paarPeoples.get(pos).getOrientPlace()+1);
-				forSortPlace.put(i,forSortPlace.get(i)+paarPeoples.get(pos).getOrientPlace()+1);
+				forSortPlace.put(i,forSortPlace.get(i)+Mpgu_slet.paarPeoples.get(pos).getOrientPlace()+1);
 				count--;
 			}
 		}
@@ -302,42 +231,111 @@ public class OrientirovanieGUI extends JDialog {
 		int place =0;
 		for (Sort.SortHM cin:sortHMPlace){
 			if(cin.ball>ballForPlace) {ballForPlace=cin.ball; place++;}
-			comands.get(cin.comand).setOrientirovanie(place);
+			Mpgu_slet.comanda.get(cin.key).setOrientirovaniePlace(place);
 		}
 
-		for(int i=0;i<comands.size();i++){
-			data[i][0] = comands.get(i).getName();
+		for(int i=0;i<Mpgu_slet.comanda.size();i++){
+			data[i][0] = Mpgu_slet.comanda.get(i);
 			data[i][1] = forSortPlace.get(i);
-			data[i][2] = comands.get(i).getOrientirovanie();
+			data[i][2] = Mpgu_slet.comanda.get(i).getOrientirovaniePlace();
 		}
 
 		comandPlace.setLayout(new FlowLayout());
-		jTable = new JTable(data, headingsCommandPlaces);
-		jTable.setColumnSelectionAllowed(false);
-		jTable.setRowSelectionAllowed(true);
+		comandRezultTable = new JTable(data, MpguMetaInfo.headingsCommandPlacesOrient);
+		comandRezultTable.setColumnSelectionAllowed(false);
+		comandRezultTable.setRowSelectionAllowed(true);
 
 
-		JScrollPane jscrlp = new JScrollPane(jTable);
-		jTable.setPreferredScrollableViewportSize(
-				new Dimension(200, 200));
+		JScrollPane jscrlp = new JScrollPane(comandRezultTable);
+		comandRezultTable.setPreferredScrollableViewportSize(
+				new Dimension(200, 100));
 
-		tm1 = jTable.getModel();
-		tm1.addTableModelListener(new TableModelListener()
-		{
-			public void tableChanged(TableModelEvent tme)
-			{
-				if(tme.getType() == TableModelEvent.UPDATE)
-				{
-					Comand comand = comands.get(tme.getFirstRow());
-					if(tme.getColumn() != 1) return;
-					comand.setOrientirovanie(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+		final TableModel tm = comandRezultTable.getModel();
+		tm.addTableModelListener(new TableModelListener() {
+			public void tableChanged(TableModelEvent tme) {
+				if (tme.getType() == TableModelEvent.UPDATE) {
+					Comand comand = Mpgu_slet.comanda.get(tme.getFirstRow());
+					if (tme.getColumn() != 2) {
+						JOptionPane.showMessageDialog(null, "Нельзя править");
+						return;
+					}
+					comand.setOrientirovaniePlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
 							tme.getColumn()).toString()));
 				}
 			}
 		});
 		comandPlace.add(jscrlp);
-		comandPlace.setVisible(true);
 	}
+
+	private void redrawFacultetPlaces(Sort.SortHM[] sortHM){
+		facultetPlace.removeAll();
+		facultetPlace.revalidate();
+
+		Object[][] data = new Object[Mpgu_slet.facultet.size()][3];
+
+
+		HashMap<Integer,Integer> forSortPlace = new HashMap<Integer, Integer>();
+
+		for(int i=0;i<Mpgu_slet.facultet.size();i++){
+
+			Facultet facultet = Mpgu_slet.facultet.get(i);
+			int count=3;
+			int pos = 0;
+			forSortPlace.put(i,0);
+			for (Sort.SortHM cin:sortHM){
+				pos = cin.key;
+				if (facultet.getName().equals(Mpgu_slet.paarPeoples.get(pos).getPeople1().getFacultetName()) && count!=0){
+					forSortPlace.put(i,forSortPlace.get(i)+Mpgu_slet.paarPeoples.get(pos).getOrientPlace());
+					count--;
+				}
+			}
+			while (count!=0) {
+				forSortPlace.put(i,forSortPlace.get(i)+Mpgu_slet.paarPeoples.get(pos).getOrientPlace()+1);
+				count--;
+			}
+		}
+
+		Sort.SortHM[] sortHMPlace= Sort.sortHM(forSortPlace);
+		Integer ballForPlace =-1;
+		int place =0;
+		for (Sort.SortHM cin:sortHMPlace){
+			if(cin.ball>ballForPlace) {ballForPlace=cin.ball; place++;}
+			Mpgu_slet.facultet.get(cin.key).setOrientirovaniePlace(place);
+		}
+
+		for(int i=0;i<Mpgu_slet.facultet.size();i++){
+			data[i][0] = Mpgu_slet.facultet.get(i);
+			data[i][1] = forSortPlace.get(i);
+			data[i][2] = Mpgu_slet.facultet.get(i).getOrientirovaniePlace();
+		}
+
+		facultetPlace.setLayout(new FlowLayout());
+		facultetRezultTable = new JTable(data, MpguMetaInfo.headingsFacultetPlacesOrient);
+		facultetRezultTable.setColumnSelectionAllowed(false);
+		facultetRezultTable.setRowSelectionAllowed(true);
+
+
+		JScrollPane jscrlp = new JScrollPane(facultetRezultTable);
+		facultetRezultTable.setPreferredScrollableViewportSize(
+				new Dimension(200, 100));
+
+		final TableModel tm = facultetRezultTable.getModel();
+		tm.addTableModelListener(new TableModelListener() {
+			public void tableChanged(TableModelEvent tme) {
+				if (tme.getType() == TableModelEvent.UPDATE) {
+					Comand comand = Mpgu_slet.comanda.get(tme.getFirstRow());
+					if (tme.getColumn() != 2) {
+						JOptionPane.showMessageDialog(null, "Нельзя править");
+						return;
+					}
+					comand.setOrientirovaniePlace(Integer.parseInt(tm.getValueAt(tme.getFirstRow(),
+							tme.getColumn()).toString()));
+				}
+			}
+		});
+		facultetPlace.add(jscrlp);
+	}
+
 
 }
 

@@ -27,7 +27,7 @@ public class PaarPeopleGUI extends JDialog{
 	private JComboBox comandaComboBox;
 
 
-	public PaarPeopleGUI(final List<People> peoples, final List<Comand> comands, final List<PaarPeople> paarPeoples) {
+	public PaarPeopleGUI() {
 		setTitle(MpguMetaInfo.paarTitle);
 		setContentPane(contentPane);
 		setModal(true);
@@ -53,71 +53,42 @@ public class PaarPeopleGUI extends JDialog{
 		final DefaultListModel infoPaar = new DefaultListModel();
 		listPaar.setModel(infoPaar);
 
-		for(Comand com : comands) {
+		for(Comand com : Mpgu_slet.comanda) {
 			comandaComboBox.addItem(com);
 		}
-
-		for (People people:peoples) {
-			infoPeople1.addElement(people);
-			infoPeople2.addElement(people);
-		}
-
-		for (PaarPeople paarPeople:paarPeoples){
-			infoPaar.addElement(paarPeople);
-			infoPeople1.removeElement(paarPeople.getPeople1());
-			infoPeople1.removeElement(paarPeople.getPeople2());
-			infoPeople2.removeElement(paarPeople.getPeople1());
-			infoPeople2.removeElement(paarPeople.getPeople2());
-		}
-
+		redrawPeopleLists();
 
 		addPaarButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				if(listPeople1.getSelectedIndex() == -1 || listPeople2.getSelectedIndex()==-1) return;
-//				People people1 = findPeople((String)listPeople1.getSelectedValue(),peoples);//todo
-//				People people2 = findPeople((String)listPeople2.getSelectedValue(),peoples);//todo
+				if(listPeople1.getSelectedIndex() == -1 || listPeople2.getSelectedIndex()==-1) {JOptionPane.showMessageDialog(null, "Никто не выбран"); return;}
 				People people1 = (People) listPeople1.getSelectedValue();
 				People people2 = (People) listPeople2.getSelectedValue();
-//				Comand comand = findComand(people1.getName(),comands);
-				if (people1.equals(people2)) return;
-				if (!people1.getComandName().equals(people2.getComandName())) return;
+				if (people1.equals(people2)) {JOptionPane.showMessageDialog(null, "Это тот же человек"); return;}
+				if (!people1.getComandName().equals(people2.getComandName())) {JOptionPane.showMessageDialog(null, "Разные команды"); return;}
 
-				PaarPeople paarPeople = new PaarPeople(paarPeoples.size()+1, people1, people2);
-				paarPeoples.add(paarPeople);
-//				comand.getPaarPeoples().add(paarPeople);
+				PaarPeople paarPeople = new PaarPeople(Mpgu_slet.paarPeoples.size()+1, people1, people2);
+				Mpgu_slet.paarPeoples.add(paarPeople);
+//				key.getPaarPeoples().add(paarPeople);
 				infoPaar.addElement(paarPeople);
-				infoPeople1.removeElement(paarPeople.getPeople1());
-				infoPeople1.removeElement(paarPeople.getPeople2());
-				infoPeople2.removeElement(paarPeople.getPeople1());
-				infoPeople2.removeElement(paarPeople.getPeople2());
+				redrawPeopleLists();
+				DataWorker.saveData(Mpgu_slet.paarPeoples,PaarPeople.class.getName());
 			}
 		});
 
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent we) {
-				DataWorker.saveData(paarPeoples,PaarPeople.class.getName());
-				System.out.println("save");
+				DataWorker.saveData(Mpgu_slet.paarPeoples,PaarPeople.class.getName());
 			}
 		});
 
 		delPaarButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				if(listPaar.getSelectedIndex() == -1) return;
-				PaarPeople paarPeople = paarPeoples.remove(listPaar.getSelectedIndex());
-//				Comand comand = findComand(paarPeople.getPeople1().getComandName(),comands);
-//				int i=0;
-//				for (PaarPeople paarPeople1: comand.getPaarPeoples()){
-//					if (paarPeople1.formatName().equals(paarPeople.formatName())){comand.getPaarPeoples().remove(i);}
-//					i++;
-//				}
+				if(listPaar.getSelectedIndex() == -1) {JOptionPane.showMessageDialog(null, "Пара для удаления не выбрана"); return;}
+				PaarPeople paarPeople = Mpgu_slet.paarPeoples.remove(listPaar.getSelectedIndex());
 				infoPaar.remove(listPaar.getSelectedIndex());
-//				infoPeople1.addElement(paarPeople.getPeople1().format());
-//				infoPeople2.addElement(paarPeople.getPeople1().format());
-//				infoPeople1.addElement(paarPeople.getPeople2().format());
-//				infoPeople2.addElement(paarPeople.getPeople2().format());
-				redrawPeopleLists(peoples, comands, paarPeoples);
+				redrawPeopleLists();
 			}
 		});
 
@@ -125,32 +96,42 @@ public class PaarPeopleGUI extends JDialog{
 		comandaComboBox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				redrawPeopleLists(peoples,comands,paarPeoples);
+				redrawPeopleLists();
 			}
 		});
 	}
 
 
-	private void redrawPeopleLists(final List<People> peoples, final List<Comand> comands, final List<PaarPeople> paarPeoples){
+	private void redrawPeopleLists(){
 		DefaultListModel infoPeople1 = (DefaultListModel) listPeople1.getModel();
 		DefaultListModel infoPeople2 = (DefaultListModel) listPeople2.getModel();
 		infoPeople1.clear();
 		infoPeople2.clear();
-		if (comandaComboBox.getSelectedIndex()==-1) {
-			for (People people : peoples) {
-				infoPeople1.addElement(people);
-				infoPeople2.addElement(people);
-			}
-		}else {
-			Comand comand = comands.get(comandaComboBox.getSelectedIndex());
+		final DefaultListModel infoPaar = (DefaultListModel) listPaar.getModel();
+		infoPaar.clear();
+//		if (comandaComboBox.getSelectedIndex()==-1) {
+//			for (People people : peoples) {
+//				infoPeople1.addElement(people);
+//				infoPeople2.addElement(people);
+//			}
+//		}else {
+			Comand comand = Mpgu_slet.comanda.get(comandaComboBox.getSelectedIndex());
 
-			for (People people:peoples) {
-				if(people.getComandName().equals(comand)) {
+			for (People people:Mpgu_slet.peoples) {
+				if(people.getComandName().equals(comand.getName())) {
 					infoPeople1.addElement(people);
 					infoPeople2.addElement(people);
 				}
 			}
+//		}
+		for (PaarPeople paarPeople:Mpgu_slet.paarPeoples){
+			infoPaar.addElement(paarPeople);
+			infoPeople1.removeElement(paarPeople.getPeople1());
+			infoPeople1.removeElement(paarPeople.getPeople2());
+			infoPeople2.removeElement(paarPeople.getPeople1());
+			infoPeople2.removeElement(paarPeople.getPeople2());
 		}
+		DataWorker.saveData(Mpgu_slet.paarPeoples,PaarPeople.class.getName());
 	}
 
 //	private People findPeople(String peopleID,List<People> peoples){
@@ -163,8 +144,8 @@ public class PaarPeopleGUI extends JDialog{
 
 
 //	private Comand findComand(String comandID,List<Comand> comands){
-//		for (Comand comand:comands){
-//			if (comand.getName().equals(comandID))return comand;
+//		for (Comand key:comands){
+//			if (key.getName().equals(comandID))return key;
 //		}
 //		return new Comand(new Facultet("error"),"error");
 //	}

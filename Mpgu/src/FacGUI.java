@@ -25,7 +25,7 @@ public class FacGUI extends JDialog{
 	private JPanel contentPane;
 
 
-	public FacGUI(final List<Facultet> facultet) {
+	public FacGUI() {
 		setTitle(MpguMetaInfo.facultetTitle);
 		setContentPane(contentPane);
 		setModal(true);
@@ -37,7 +37,7 @@ public class FacGUI extends JDialog{
 		final DefaultListModel info = new DefaultListModel();
 		list1.setModel(info);
 
-		for (Facultet fac:facultet) {
+		for (Facultet fac:Mpgu_slet.facultet) {
 			info.addElement(fac);
 		}
 
@@ -47,7 +47,7 @@ public class FacGUI extends JDialog{
 				String facName = textField1.getText();
 				if(facName.length()!=0 && !info.contains(facName)){
 				info.addElement(facName);
-				facultet.add(new Facultet(facName));
+					Mpgu_slet.facultet.add(new Facultet(facName));
 					textField1.setText("");
 				}
 			}
@@ -56,14 +56,14 @@ public class FacGUI extends JDialog{
 		delFacButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				facultet.remove(list1.getSelectedIndex());
+				Mpgu_slet.facultet.remove(list1.getSelectedIndex());
 				info.remove(list1.getSelectedIndex());
 			}
 		});
 
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent we) {
-				DataWorker.saveData(facultet,Facultet.class.getName());
+				DataWorker.saveData(Mpgu_slet.facultet,Facultet.class.getName());
 			}
 		});
 	}

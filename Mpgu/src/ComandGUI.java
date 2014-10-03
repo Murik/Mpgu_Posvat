@@ -24,7 +24,7 @@ public class ComandGUI extends JDialog {
 	private JPanel contentPane;
 
 
-	public ComandGUI(final List<Comand> comanda, final List<Facultet> facultet) {
+	public ComandGUI() {
 		setTitle(MpguMetaInfo.comandTitle);
 		setContentPane(contentPane);
 		setModal(true);
@@ -36,11 +36,11 @@ public class ComandGUI extends JDialog {
 		final DefaultListModel info = new DefaultListModel();
 		comList.setModel(info);
 
-		for(Facultet fac:facultet){
+		for(Facultet fac:Mpgu_slet.facultet){
 			facBox.addItem(fac);
 		}
-		for (Comand com:comanda) {
-			info.addElement(com + " / " + com.getFacultet());
+		for (Comand com:Mpgu_slet.comanda) {
+			info.addElement(com + " / " + com.getFacultetName());
 		}
 
 		addComButton.addActionListener(new ActionListener() {
@@ -51,7 +51,7 @@ public class ComandGUI extends JDialog {
 					String com = comField.getText();
 					if(!info.contains(com + " / " + fac) && com.length()>0) {
 						info.addElement(com + " / " + fac);
-						comanda.add(new Comand(facultet.get(facBox.getSelectedIndex()),com));
+						Mpgu_slet.comanda.add(new Comand(Mpgu_slet.facultet.get(facBox.getSelectedIndex()).getName(),com));
 					}
 				}
 			}
@@ -60,14 +60,14 @@ public class ComandGUI extends JDialog {
 		delComButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				comanda.remove(comList.getSelectedIndex());
+				Mpgu_slet.comanda.remove(comList.getSelectedIndex());
 				info.remove(comList.getSelectedIndex());
 			}
 		});
 
 		this.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent we) {
-				DataWorker.saveData(comanda,Comand.class.getName());
+				DataWorker.saveData(Mpgu_slet.comanda,Comand.class.getName());
 //				System.out.println("save");
 			}
 		});
